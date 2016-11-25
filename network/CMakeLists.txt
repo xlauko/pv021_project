@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project( ltsmNetwork )
+file(GLOB SRC . "*.cpp")
+add_definitions(-std=c++14)
+add_executable( ltsmNetwork main.cpp ${SRC} )
