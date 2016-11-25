@@ -6,7 +6,11 @@
 #include "NeuralLayer.hpp"
 
 template < class I1, class I2, class O, class Op >
-constexpr auto biElementWise = std::transform< I1, I2, O, Op >;
+O biElementWise( I1&& beg1, I1&& end1, I2&& beg2, O&& out, Op&& op ) {
+    return std::transform( std::forward< I1 >( beg1 ), std::forward< I1 >( end1 ),
+        std::forward< I2 >( beg2 ), std::forward< O >( out ),
+        std::forward < Op>( op ) );
+}
 
 template < class I1, class I2, class I3, class O, class Op >
 O triElementWise( I1 beg1, I1 end1, I2 beg2, I3 beg3, O out, Op op ) {
@@ -30,7 +34,7 @@ struct LstmCell {
         _inputGate.forwardPropagate();
         _outputGate.forwardPropagate();
 
-        std::transform( _memory.begin(), _memory.end(),
+        biElementWise( _memory.begin(), _memory.end(),
             _forgetGate.output(), _memory.begin(),
             std::multiplies< Double >() );
         triElementWise( _memory.begin(), _memory.end(),
@@ -38,7 +42,7 @@ struct LstmCell {
             []( Double mem, Double a, Double b ) {
                 return mem + a * b;
             });
-        std::transform( _memory.begin(), _memory.end(),
+        biElementWise( _memory.begin(), _memory.end(),
             _outputGate.output(), _memory.begin(),
             []( Double mem, Double e ) {
                 return Funs::normalize( mem ) * e;
