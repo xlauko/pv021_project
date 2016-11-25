@@ -43,6 +43,15 @@ struct NeuralLayer {
     Double *input() { return _input; }
     Double *output() { return _output.data(); }
 
+    void randomizeWeights( Double min, Double max ) {
+        std::random_device random_device;
+        std::mt19937 generator(random_device());
+        std::uniform_real_distribution<> distribution(min, max);
+        auto rgen = std::bind( distribution, generator );
+        for ( auto& vec : _weights )
+            std::generate( vec.begin(), vec.end(), rgen );
+    }
+
     Double *_input;
     std::array< Double, OutputSize > _output;
     std::array< std::array< Double, InputSize + 1 >, OutputSize > _weights;

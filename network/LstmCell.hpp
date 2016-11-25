@@ -52,6 +52,23 @@ struct LstmCell {
     Double *input() { return _concatInput.data(); }
     Double *output() { return _concatInput.data() + InputSize; }
 
+    void randomizeMemory( Double min, Double max ) {
+        _randomize( min, max, _memory );
+    }
+
+    void randomizeInput( Double min, Double max ) {
+        _randomize( min, max, _concatInput );
+    }
+
+    template < class T >
+    void _randomize( Double min, Double max, T& vec ) {
+        std::random_device random_device;
+        std::mt19937 generator(random_device());
+        std::uniform_real_distribution<> distribution(min, max);
+        auto rgen = std::bind( distribution, generator );
+        std::generate( vec.begin(), vec.end(), rgen );
+    }
+
     std::array< Double, InputSize + OutputSize > _concatInput;
     std::array< Double, OutputSize > _memory;
     std::array< Double, OutputSize > _output;
