@@ -3,6 +3,7 @@
 #include <cassert>
 #include <array>
 #include <algorithm>
+#include "ArrayView.hpp"
 
 template < class Double = double >
 struct Tanh {
@@ -29,19 +30,19 @@ struct Sigmoid {
 
 template < int InputSize, int OutputSize, class Fun, class Double = double >
 struct NeuralLayer {
-    NeuralLayer( Double *input = nullptr ) : _input( input ) { }
+    NeuralLayer( ArrayView< Double, InputSize > input ) : _input( input ) {};
+    NeuralLayer( std::array< Double, InputSize >& input )
+        : _input( input.data() )
+    {};
 
     void forwardPropagate() {
         assert( _input );
         for ( int i = 0; i != OutputSize; i++ ) {
             Double prod = std::inner_product( _weights[ i ].begin() + 1,
-                _weights[ i ].end(), _input, _weights[ i ][ 0 ] );
+                _weights[ i ].end(), _input.begin(), _weights[ i ][ 0 ] );
             _output[ i ] = Fun::f( prod );
         }
     }
-
-    Double *input() { return _input; }
-    Double *output() { return _output.data(); }
 
     void randomizeWeights( Double min, Double max ) {
         std::random_device random_device;
@@ -52,7 +53,7 @@ struct NeuralLayer {
             std::generate( vec.begin(), vec.end(), rgen );
     }
 
-    Double *_input;
+    ArrayView< Double, InputSize > _input;
     std::array< Double, OutputSize > _output;
     std::array< std::array< Double, InputSize + 1 >, OutputSize > _weights;
 };

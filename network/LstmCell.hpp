@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include "ArrayView.hpp"
 #include "NeuralLayer.hpp"
 
 template < class I1, class I2, class O, class Op >
@@ -22,10 +23,12 @@ O triElementWise( I1 beg1, I1 end1, I2 beg2, I3 beg3, O out, Op op ) {
 template < int InputSize, int OutputSize, class Funs, class Double = double >
 struct LstmCell {
     LstmCell() :
-        _forgetGate( _concatInput.data() ),
-        _modulateGate( _concatInput.data() ),
-        _inputGate( _concatInput.data() ),
-        _outputGate( _concatInput.data() )
+        _output( _concatInput.data() + InputSize ),
+        _input( _concatInput.data() ),
+        _forgetGate( _concatInput ),
+        _modulateGate( _concatInput ),
+        _inputGate( _concatInput ),
+        _outputGate( _concatInput )
     {}
 
     void forwardPropagate() {
@@ -35,22 +38,20 @@ struct LstmCell {
         _outputGate.forwardPropagate();
 
         biElementWise( _memory.begin(), _memory.end(),
-            _forgetGate.output(), _memory.begin(),
+            _forgetGate._output.begin(), _memory.begin(),
             std::multiplies< Double >() );
         triElementWise( _memory.begin(), _memory.end(),
-            _modulateGate.output(), _inputGate.output(), _memory.begin(),
+            _modulateGate._output.begin(), _inputGate._output.begin(),
+            _memory.begin(),
             []( Double mem, Double a, Double b ) {
                 return mem + a * b;
             });
         biElementWise( _memory.begin(), _memory.end(),
-            _outputGate.output(), _memory.begin(),
+            _outputGate._output.begin(), _memory.begin(),
             []( Double mem, Double e ) {
                 return Funs::normalize( mem ) * e;
             });
     }
-
-    Double *input() { return _concatInput.data(); }
-    Double *output() { return _concatInput.data() + InputSize; }
 
     void randomizeMemory( Double min, Double max ) {
         _randomize( min, max, _memory );
@@ -71,7 +72,8 @@ struct LstmCell {
 
     std::array< Double, InputSize + OutputSize > _concatInput;
     std::array< Double, OutputSize > _memory;
-    std::array< Double, OutputSize > _output;
+    ArrayView< Double, OutputSize > _output;
+    ArrayView< Double, InputSize > _input;
 
     NeuralLayer< InputSize + OutputSize, OutputSize,
         typename Funs::forgetAct, Double > _forgetGate;
