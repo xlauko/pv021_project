@@ -55,6 +55,13 @@ struct LstmCell {
             });
     }
 
+    void randomizeWeights( Double min, Double max ) {
+        _forgetGate.randomizeWeights( min, max );
+        _modulateGate.randomizeWeights( min, max );
+        _inputGate.randomizeWeights( min, max );
+        _outputGate.randomizeWeights( min, max );
+    }
+
     void randomizeMemory( Double min, Double max ) {
         _randomize( min, max, _memory );
     }

@@ -16,6 +16,7 @@ struct NeuralFuns {
 
 int main() {
     LstmCell< 10, 20, NeuralFuns<> > cell;
+    cell.randomizeWeights( -1, 1 );
     cell.forwardPropagate();
     std::ofstream fo( "test.txt" );
     write( fo, cell );
