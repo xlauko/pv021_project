@@ -38,7 +38,8 @@ struct LstmCell {
         _outputGate.forwardPropagate();
 
         biElementWise( _memory.begin(), _memory.end(),
-            _forgetGate._output.begin(), _memory.begin(),
+            _forgetGate._output.begin(),
+            _memory.begin(),
             std::multiplies< Double >() );
         triElementWise( _memory.begin(), _memory.end(),
             _modulateGate._output.begin(), _inputGate._output.begin(),
@@ -47,10 +48,12 @@ struct LstmCell {
                 return mem + a * b;
             });
         biElementWise( _memory.begin(), _memory.end(),
-            _outputGate._output.begin(), _memory.begin(),
+            _outputGate._output.begin(),
+            _output.begin(),
             []( Double mem, Double e ) {
                 return Funs::normalize( mem ) * e;
             });
+
     }
 
     void randomizeMemory( Double min, Double max ) {
