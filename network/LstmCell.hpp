@@ -86,3 +86,44 @@ struct LstmCell {
     NeuralLayer< InputSize + OutputSize, OutputSize,
         typename Funs::outputAct, Double > _outputGate;
 };
+
+template < int InputSize, int OutputSize, class Funs, class Double >
+void write( std::ostream& s, const LstmCell< InputSize, OutputSize, Funs, Double>& c ) {
+    s.write( "LC", 2 );
+    int tmp = InputSize;
+    const char *data = reinterpret_cast< const char * >( &tmp );
+    s.write( data, sizeof( InputSize ) );
+    tmp = OutputSize;
+    s.write( data, sizeof( OutputSize ) );
+    tmp = sizeof( Double );
+    s.write( data, sizeof( tmp ) );
+
+    write( s, c._forgetGate );
+    write( s, c._modulateGate );
+    write( s, c._inputGate );
+    write( s, c._outputGate );
+}
+
+template < int InputSize, int OutputSize, class Funs, class Double >
+void read( std::istream& s, LstmCell< InputSize, OutputSize, Funs, Double>& c ) {
+    char type[ 2 ];
+    s.read( type, 2 );
+    if ( type[ 0 ] != 'L' || type[ 1 ] != 'C' )
+        throw std::runtime_error( "Unexpected type" );
+    int tmp;
+    char *data = reinterpret_cast< char * >( &tmp );
+    s.read( data, sizeof( tmp ) );
+    if ( tmp != InputSize )
+        throw std::runtime_error( "Unexpected InputSize of a LstmCell" );
+    s.read( data, sizeof( tmp ) );
+    if ( tmp != OutputSize )
+        throw std::runtime_error( "Unexpected OutputSize of a LstmCell" );
+    s.read( data, sizeof( tmp ) );
+    if ( tmp != sizeof( Double ) )
+        throw std::runtime_error( "Unexpected size of Double of a LstmCell" );
+
+    read( s, c._forgetGate );
+    read( s, c._modulateGate );
+    read( s, c._inputGate );
+    read( s, c._outputGate );
+}

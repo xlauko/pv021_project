@@ -18,10 +18,10 @@ int main() {
     LstmCell< 10, 20, NeuralFuns<> > cell;
     cell.forwardPropagate();
     std::ofstream fo( "test.txt" );
-    write( fo, cell._forgetGate );
+    write( fo, cell );
     fo.close();
     std::ifstream fi( "test.txt" );
-    read( fi, cell._forgetGate );
+    read( fi, cell );
     std::cout << "Here should be output of the network. But there is none\n";
     return 0;
 }
