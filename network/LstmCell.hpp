@@ -53,7 +53,6 @@ struct LstmCell {
             []( Double mem, Double e ) {
                 return Funs::normalize( mem ) * e;
             });
-
     }
 
     void randomizeMemory( Double min, Double max ) {

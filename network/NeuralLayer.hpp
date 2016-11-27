@@ -3,6 +3,8 @@
 #include <cassert>
 #include <array>
 #include <algorithm>
+#include <iostream>
+#include <exception>
 #include "ArrayView.hpp"
 
 template < class Double = double >
@@ -57,3 +59,42 @@ struct NeuralLayer {
     std::array< Double, OutputSize > _output;
     std::array< std::array< Double, InputSize + 1 >, OutputSize > _weights;
 };
+
+template < int InputSize, int OutputSize, class Fun, class Double >
+void write( std::ostream& s, const NeuralLayer< InputSize, OutputSize, Fun, Double >& l ) {
+    s.write( "NL", 2 );
+    int tmp = InputSize;
+    const char *data = reinterpret_cast< const char * >( &tmp );
+    s.write( data, sizeof( InputSize ) );
+    tmp = OutputSize;
+    s.write( data, sizeof( OutputSize ) );
+    tmp = sizeof( Double );
+    s.write( data, sizeof( tmp ) );
+
+    for ( const auto& w : l._weights )
+        s.write( reinterpret_cast< const char * >( w.data() ),
+            sizeof( Double ) * (InputSize + 1) );
+}
+
+template < int InputSize, int OutputSize, class Fun, class Double >
+void read( std::istream& s, NeuralLayer< InputSize, OutputSize, Fun, Double >& l ) {
+    char type[ 2 ];
+    s.read( type, 2 );
+    if ( type[ 0 ] != 'N' || type[ 1 ] != 'L' )
+        throw std::runtime_error( "Unexpected type" );
+    int tmp;
+    char *data = reinterpret_cast< char * >( &tmp );
+    s.read( data, sizeof( tmp ) );
+    if ( tmp != InputSize )
+        throw std::runtime_error( "Unexpected InputSize of a NL" );
+    s.read( data, sizeof( tmp ) );
+    if ( tmp != OutputSize )
+        throw std::runtime_error( "Unexpected OutputSize of a NL" );
+    s.read( data, sizeof( tmp ) );
+    if ( tmp != sizeof( Double ) )
+        throw std::runtime_error( "Unexpected size of Double of a NL" );
+
+    for ( auto& w : l._weights )
+        s.read( reinterpret_cast< char * >( w.data() ),
+            sizeof( Double ) * (InputSize + 1) );
+}
