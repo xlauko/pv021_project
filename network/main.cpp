@@ -9,9 +9,7 @@ struct NeuralFuns {
     using modulateAct = Tanh< Double >;
     using inputAct = Sigmoid< Double >;
     using outputAct = Sigmoid< Double >;
-    static Double normalize( Double x ) {
-        return tanh( x );
-    }
+    using normalize = Tanh< Double >;
 };
 
 int main() {

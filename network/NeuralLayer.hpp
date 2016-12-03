@@ -9,23 +9,36 @@
 
 template < class Double = double >
 struct Tanh {
+    // function value
     static Double f( Double x ) {
         return tanh( x );
     }
+    // derivative
     static Double d( Double x ) {
         Double t = tanh( x );
         return Double( 1.0 ) - t * t;
+    }
+    // derivative based on function value
+    static Double df( Double x ) {
+        return Double( 1.0 ) - x * x;
     }
 };
 
 template < class Double = double >
 struct Sigmoid {
+    // function value
     static Double f( Double x ) {
         return Double( 1.0 ) / ( Double( 1.0 ) + exp( -x ) );
     }
+    // derivative
     static Double d( Double x ) {
-        Double t = Double( 1.0 ) + expr( x );
+        Double t = Double( 1.0 ) + exp( x );
         return exp( x ) / ( t * t );
+    }
+    // deriviative based on function value
+    static Double df( Double x ) {
+        Double t = Double( 1.0 ) + x;
+        return x / ( t * t );
     }
 };
 
@@ -53,6 +66,11 @@ struct NeuralLayer {
         auto rgen = std::bind( distribution, generator );
         for ( auto& vec : _weights )
             std::generate( vec.begin(), vec.end(), rgen );
+    }
+
+    void copyState( const NeuralLayer& l ) {
+        _output = l._output;
+        _weights = l._weights;
     }
 
     ArrayView< Double, InputSize > _input;

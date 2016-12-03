@@ -10,7 +10,7 @@ template < class I1, class I2, class O, class Op >
 O biElementWise( I1&& beg1, I1&& end1, I2&& beg2, O&& out, Op&& op ) {
     return std::transform( std::forward< I1 >( beg1 ), std::forward< I1 >( end1 ),
         std::forward< I2 >( beg2 ), std::forward< O >( out ),
-        std::forward < Op>( op ) );
+        std::forward < Op >( op ) );
 }
 
 template < class I1, class I2, class I3, class O, class Op >
@@ -30,6 +30,34 @@ struct LstmCell {
         _inputGate( _concatInput ),
         _outputGate( _concatInput )
     {}
+
+    LstmCell( const LstmCell& o ) :
+        _concatInput( o._concatInput ),
+        _memory( o._memory ),
+        _output( _concatInput.data() + InputSize ),
+        _input( _concatInput.data() ),
+        _forgetGate( _concatInput ),
+        _modulateGate( _concatInput ),
+        _inputGate( _concatInput ),
+        _outputGate( _concatInput )
+    {
+        _forgetGate._copyState( o._forgetGate );
+        _modulateGate._copyState( o._modulateGate );
+        _inputGate._copyState( o._inputGate );
+        _outputGate._copyState( o._outputGate );
+    }
+
+    LstmCell& operator=( const LstmCell& o ) {
+        if ( this == &o )
+            return *this;
+        _forgetGate = o._forgetGate;
+        _modulateGate = o._modulateGate;
+        _inputGate = o._modulateGate;
+        _outputGate = o._modulateGate;
+
+        _concatInput = o._concatInput;
+        _memory = o._memory;
+    }
 
     void forwardPropagate() {
         _forgetGate.forwardPropagate();
@@ -51,8 +79,84 @@ struct LstmCell {
             _outputGate._output.begin(),
             _output.begin(),
             []( Double mem, Double e ) {
-                return Funs::normalize( mem ) * e;
+                return Funs::normalize::f( mem ) * e;
             });
+    }
+
+    // Perfom back propagation, return memory gradient
+    std::array< Double, OutputSize > backwardPropagate(
+        ArrayView< Double, OutputSize > desiredOutput,
+        ArrayView< Double, OutputSize > prevMemory,
+        ArrayView< Double, OutputSize > memoryGradient )
+    {
+        // Follow: http://arunmallya.github.io/writeups/nn/lstm/index.html
+        std::array< Double, OutputSize > dH;
+        biElementWise( _output.begin(), _output.end(), desiredOutput.begin(),
+            dH.begin(),
+            []( Double out, Double ex) {
+                return 2 * ( out - ex );
+            } );
+
+        std::array< Double, OutputSize > dO;
+        biElementWise( dH.begin(), dH.end(), _memory.begin(), dO.begin(),
+            []( Double dh, Double c ) {
+                return dh * Funs::normalize::f( c );
+            } );
+
+        std::array< Double, OutputSize > dC;
+        triElementWise( dH.begin(), dH.end(), _outputGate._output.begin(),
+            _memory.begin(), dC.begin(),
+            []( Double dh, Double o, Double c ) {
+                return dh * o * Funs::normalize::d( c );
+            } );
+        biElementWise( dC.begin(), dC.end(), memoryGradient.begin(), dC.begin(),
+            std::plus< Double >() );
+
+        std::array< Double, OutputSize > dI;
+        biElementWise( dC.begin(), dC.end(), _modulateGate.begin(), dI.begin(),
+            std::multiplies< Double >() );
+
+        std::array< Double, OutputSize > dF;
+        biElementWise( dC.begin(), dC.end(), prevMemory.begin(), dF.begin(),
+            std::multiplies< Double >() );
+
+        std::array< Double, OutputSize > dA;
+        biElementWise( dC.begin(), dC.end(), _inputGate._output.begin(),
+            std::multiplies< Double >() );
+
+        std::array< Double, OutputSize > dC1;
+        biElementWise( dC.begin(), dC.end(), _forgetGate._output.begin(),
+            dC1.begin(), std::multiplies< Double >() );
+
+        std::array< Double, OutputSize > dAp;
+        biElementWise( dA.begin(), dA.end(), _modulateGate._output.begin(),
+            dAp.begin(),
+            []( Double da, Double a ) {
+                return da * Funs::modulateAct::df( a );
+            } );
+
+        std::array< Double, OutputSize > dIp;
+        biElementWise( dI.begin(), dI.end(), _inputGate._output.begin(),
+            dIp.begin(),
+            []( Double di, Double i ) {
+                return di * i * ( Double( 1.0 ) - i );
+            } );
+
+        std::array< Double, OutputSize > dFp;
+        biElementWise( dF.begin(), dF.end(), _forgetGate._output.begin(),
+            dFp.begin(),
+            []( Double df, Double f) {
+                return df * f * ( Double( 1.0 ) - f );
+            } );
+
+        std::array< Double, OutputSize > dOp;
+        biElementWise( dO.begin(), dO.end(), _outputGate._output.begin(),
+            dIp.begin(),
+            []( Double d, Double o ) {
+                return d * o * ( Double( 1.0 ) - o );
+            } );
+
+        return dC;
     }
 
     void randomizeWeights( Double min, Double max ) {
