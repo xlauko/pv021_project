@@ -57,7 +57,7 @@ int main() {
 
     std::cout << "Sizes: " << cell.inputSize << ", " << cell.outputSize << "\n";
 
-    Network< double, MyCell, MyCell, MyCell> network;
+    Network< double, MyCell, MyCell, MyCell > network;
     network.forwardPropagate();
     return 0;
 }

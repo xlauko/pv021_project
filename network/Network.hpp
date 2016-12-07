@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 #include "ArrayView.hpp"
 #include "util.hpp"
 
@@ -25,6 +26,10 @@ struct Network {
         const int idx = _layerCount - I::value;
         auto& source = std::get< idx >( _layers );
         auto& target = std::get< idx + 1 >( _layers );
+
+        using A = typename std::remove_reference< decltype( source ) >::type;
+        using B = typename std::remove_reference< decltype( target ) >::type;
+        static_assert( A::outputSize == B::inputSize );
 
         source.forwardPropagate();
         std::copy( source._output.begin(), source._output.end(),
