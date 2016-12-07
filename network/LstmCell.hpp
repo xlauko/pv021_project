@@ -22,6 +22,9 @@ O triElementWise( I1 beg1, I1 end1, I2 beg2, I3 beg3, O out, Op op ) {
 
 template < int InputSize, int OutputSize, class Funs, class Double = double >
 struct LstmCell {
+    static constexpr int inputSize = InputSize;
+    static constexpr int outputSize = OutputSize;
+
     LstmCell() :
         _output( _concatInput.data() + InputSize ),
         _input( _concatInput.data() ),
@@ -83,11 +86,20 @@ struct LstmCell {
             });
     }
 
+    struct LearningContext {
+        using Weights = std::array< std::array< Double, InputSize + 1 >, OutputSize >;
+        std::array< Double, OutputSize > memoryGradient;
+        Weights dForget;
+        Weights dModulate;
+        Weights dInput;
+        Weights dOutput;
+    };
+
     // Perfom back propagation, return memory gradient
-    std::array< Double, OutputSize > backwardPropagate(
+    void backwardPropagate(
         ArrayView< Double, OutputSize > desiredOutput,
         ArrayView< Double, OutputSize > prevMemory,
-        ArrayView< Double, OutputSize > memoryGradient )
+        LearningContext& context )
     {
         // Follow: http://arunmallya.github.io/writeups/nn/lstm/index.html
         std::array< Double, OutputSize > dH;
@@ -109,24 +121,28 @@ struct LstmCell {
             []( Double dh, Double o, Double c ) {
                 return dh * o * Funs::normalize::d( c );
             } );
-        biElementWise( dC.begin(), dC.end(), memoryGradient.begin(), dC.begin(),
+        biElementWise( dC.begin(), dC.end(), context.memoryGradient.begin(),
+            context.memoryGradient.begin(),
             std::plus< Double >() );
 
         std::array< Double, OutputSize > dI;
-        biElementWise( dC.begin(), dC.end(), _modulateGate.begin(), dI.begin(),
+        biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
+            _modulateGate._output.begin(), dI.begin(),
             std::multiplies< Double >() );
 
         std::array< Double, OutputSize > dF;
-        biElementWise( dC.begin(), dC.end(), prevMemory.begin(), dF.begin(),
+        biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
+            prevMemory.begin(), dF.begin(),
             std::multiplies< Double >() );
 
         std::array< Double, OutputSize > dA;
-        biElementWise( dC.begin(), dC.end(), _inputGate._output.begin(),
+        biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
+            _inputGate._output.begin(), dA.begin(),
             std::multiplies< Double >() );
 
-        std::array< Double, OutputSize > dC1;
-        biElementWise( dC.begin(), dC.end(), _forgetGate._output.begin(),
-            dC1.begin(), std::multiplies< Double >() );
+        /*std::array< Double, OutputSize > dC1;
+        biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(), _forgetGate._output.begin(),
+            dC1.begin(), std::multiplies< Double >() );*/
 
         std::array< Double, OutputSize > dAp;
         biElementWise( dA.begin(), dA.end(), _modulateGate._output.begin(),
@@ -156,7 +172,31 @@ struct LstmCell {
                 return d * o * ( Double( 1.0 ) - o );
             } );
 
-        return dC;
+        for ( int i = 0; i != OutputSize; i++ ) {
+            Double dfp = dFp[ i ];
+            context.dForget[ i ][ 0 ] += dfp;
+            std::transform( _concatInput.begin(), _concatInput.end(),
+                context.dForget[ i ].begin() + 1,
+                [ dfp ]( Double x ) { return dfp * x; } );
+
+            Double dap = dAp[ i ];
+            context.dModulate[ i ][ 0 ] += dap;
+            std::transform( _concatInput.begin(), _concatInput.end(),
+                context.dModulate[ i ].begin() + 1,
+                [ dap ]( Double x ) { return dap * x; } );
+
+            Double dip = dIp[ i ];
+            context.dInput[ i ][ 0 ] += dip;
+            std::transform( _concatInput.begin(), _concatInput.end(),
+                context.dInput[ i ].begin() + 1,
+                [ dip ]( Double x ) { return dip * x; } );
+
+            Double dop = dOp[ i ];
+            context.dOutput[ i ][ 0 ] += dop;
+            std::transform( _concatInput.begin(), _concatInput.end(),
+                context.dOutput[ i ].begin() + 1,
+                [ dop ]( Double x ) { return dop * x; } );
+        }
     }
 
     void randomizeWeights( Double min, Double max ) {
