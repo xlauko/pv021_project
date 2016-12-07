@@ -68,9 +68,13 @@ struct NeuralLayer {
             std::generate( vec.begin(), vec.end(), rgen );
     }
 
-    void copyState( const NeuralLayer& l ) {
+    void _copyState( const NeuralLayer& l ) {
         _output = l._output;
         _weights = l._weights;
+    }
+
+    void clear() {
+        std::fill( _output.begin(), _output.end(), 0.0 );
     }
 
     ArrayView< Double, InputSize > _input;

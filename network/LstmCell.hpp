@@ -24,6 +24,8 @@ template < int InputSize, int OutputSize, class Funs, class Double = double >
 struct LstmCell {
     static constexpr int inputSize = InputSize;
     static constexpr int outputSize = OutputSize;
+    using actFuns = Funs;
+    using numType = Double;
 
     LstmCell() :
         _output( _concatInput.data() + InputSize ),
@@ -95,7 +97,6 @@ struct LstmCell {
         Weights dOutput;
     };
 
-    // Perfom back propagation, return memory gradient
     void backwardPropagate(
         ArrayView< Double, OutputSize > desiredOutput,
         ArrayView< Double, OutputSize > prevMemory,
@@ -221,6 +222,16 @@ struct LstmCell {
         std::uniform_real_distribution<> distribution(min, max);
         auto rgen = std::bind( distribution, generator );
         std::generate( vec.begin(), vec.end(), rgen );
+    }
+
+    void clear() {
+        std::fill( _memory.begin(), _memory.end(), 0 );
+        std::fill( _concatInput.begin(), _concatInput.end(), 0 );
+
+        _forgetGate.clear();
+        _modulateGate.clear();
+        _inputGate.clear();
+        _outputGate.clear();
     }
 
     std::array< Double, InputSize + OutputSize > _concatInput;

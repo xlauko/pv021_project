@@ -59,5 +59,7 @@ int main() {
 
     Network< double, MyCell, MyCell, MyCell > network;
     network.forwardPropagate();
+    network.evaluate( {} );
+    network.learn( {} );
     return 0;
 }
