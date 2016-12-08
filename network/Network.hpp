@@ -1,5 +1,6 @@
 #pragma once
 #include <type_traits>
+#include "LstmCell.hpp"
 #include "ArrayView.hpp"
 #include "util.hpp"
 
@@ -7,6 +8,7 @@ template < class Double, class... Cells /*bottom-up*/ >
 struct Network {
     static constexpr int _layerCount = sizeof...( Cells );
     using Layers = std::tuple< Cells... >;
+    template< typename T > using GetContext = typename T::LearningContext;
 
     Layers _layers;
 
@@ -62,7 +64,43 @@ struct Network {
         }
     }
 
-    void learn( std::vector< std::pair< Input, Output> > sample ) {
+    template < class Out >
+    void _backPropagate( Layers& layers, Layers* prev,
+        std::tuple< GetContext< Cells >... >& ctx, Out& expected,
+        std::integral_constant< int, 1 > )
+    {
+        auto& l = std::get< 0 >( layers );
+        auto* p = prev ? &std::get< 0 >( *prev ) : nullptr;
+        l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr,
+            std::get< _layerCount - 1 >( ctx ) );
+    }
+
+    template < class I, class Out >
+    void _backPropagate( Layers& layers, Layers* prev,
+        std::tuple< GetContext< Cells >... >& ctx, Out& expected, I )
+    {
+        auto& l = std::get< I::value - 1 >( layers );
+        auto* p = prev ? &std::get< I::value - 1 >( *prev ) : nullptr;
+        auto in = l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr,
+            std::get< _layerCount - 1 >( ctx ) );
+        biElementWise( in.begin(), in.end(), l._input.begin(), in.begin(),
+            std::plus< Double >() );
+        _backPropagate( layers, prev, ctx, in, std::integral_constant< int, I::value - 1 >() );
+    }
+
+    void _updateWeights( Double step, std::tuple< GetContext< Cells >... >& ctx,
+        std::integral_constant< int, 0 > )
+    { }
+
+    template < class I >
+    void _updateWeights( Double step, std::tuple< GetContext< Cells >... >& ctx, I ) {
+        auto& dw = std::get< I::value - 1 >( ctx );
+        auto& l = std::get< I::value - 1 >( _layers );
+        l.adjustWeights( dw, step );
+        _updateWeights( step, ctx, std::integral_constant< int, I::value - 1 >() );
+    }
+
+    void learn( std::vector< std::pair< Input, Output> > sample, Double step ) {
         std::vector< Layers > timeSteps;
         Layers *prev = &_layers;
         // Unroll forward propagation in time
@@ -74,6 +112,12 @@ struct Network {
             forwardPropagate( *prev );
         }
         // Back propage the desired output
+        std::tuple< GetContext< Cells >... > context;
+        for ( int i = timeSteps.size() - 1; i >= 0; i-- )
+            _backPropagate( timeSteps[ i ], i ? &( timeSteps[ i - 1 ] ) : nullptr,
+                context, sample[ i ].second, std::integral_constant< int, _layerCount >() );
+        // Propagate weight change
+        _updateWeights( step, context, std::integral_constant< int, _layerCount >() );
     }
 
 

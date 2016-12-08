@@ -89,7 +89,7 @@ struct LstmCell {
     }
 
     struct LearningContext {
-        using Weights = std::array< std::array< Double, InputSize + 1 >, OutputSize >;
+        using Weights = std::array< std::array< Double, InputSize + OutputSize + 1 >, OutputSize >;
         std::array< Double, OutputSize > memoryGradient;
         Weights dForget;
         Weights dModulate;
@@ -97,9 +97,16 @@ struct LstmCell {
         Weights dOutput;
     };
 
-    void backwardPropagate(
-        ArrayView< Double, OutputSize > desiredOutput,
-        ArrayView< Double, OutputSize > prevMemory,
+    void adjustWeights( LearningContext& c, Double step ) {
+        _forgetGate.adjustWeights( c.dForget, step );
+        _modulateGate.adjustWeights( c.dModulate, step );
+        _inputGate.adjustWeights( c.dInput, step );
+        _outputGate.adjustWeights( c.dOutput, step );
+    }
+
+    std::array< Double, InputSize > backPropagate(
+        ArrayView< Double, OutputSize > desiredOutput, // Cannot be null
+        ArrayView< Double, OutputSize > prevMemory,    // Can be null
         LearningContext& context )
     {
         // Follow: http://arunmallya.github.io/writeups/nn/lstm/index.html
@@ -132,9 +139,10 @@ struct LstmCell {
             std::multiplies< Double >() );
 
         std::array< Double, OutputSize > dF;
-        biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
-            prevMemory.begin(), dF.begin(),
-            std::multiplies< Double >() );
+        if ( prevMemory )
+            biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
+                prevMemory.begin(), dF.begin(),
+                std::multiplies< Double >() );
 
         std::array< Double, OutputSize > dA;
         biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
@@ -198,6 +206,22 @@ struct LstmCell {
                 context.dOutput[ i ].begin() + 1,
                 [ dop ]( Double x ) { return dop * x; } );
         }
+
+        std::array< Double, InputSize > dInp;
+        for ( int i = 0; i != InputSize; i++ ) {
+            Double tmp = 0;
+            for ( int j = 0; j != OutputSize; j++ )
+                tmp += _forgetGate._weights[ j ][ i ] * dFp[ j ];
+            for ( int j = 0; j != OutputSize; j++ )
+                tmp += _modulateGate._weights[ j ][ i ] * dAp[ j ];
+            for ( int j = 0; j != OutputSize; j++ )
+                tmp += _inputGate._weights[ j ][ i ] * dIp[ j ];
+            for ( int j = 0; j != OutputSize; j++ )
+                tmp += _outputGate._weights[ j ][ i ] * dOp[ j ];
+            dInp[ i ] = tmp;
+        }
+
+        return dInp;
     }
 
     void randomizeWeights( Double min, Double max ) {

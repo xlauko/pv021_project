@@ -77,6 +77,15 @@ struct NeuralLayer {
         std::fill( _output.begin(), _output.end(), 0.0 );
     }
 
+    void adjustWeights( std::array< std::array< Double, InputSize + 1 >, OutputSize >& d,
+        Double step )
+    {
+        for( int i = 0; i != OutputSize; i++ ) {
+            for ( int j = 0; j != InputSize + 1; j++ )
+                _weights[ i ][ j ] += d[ i ][ j ] * step;
+        }
+    }
+
     ArrayView< Double, InputSize > _input;
     std::array< Double, OutputSize > _output;
     std::array< std::array< Double, InputSize + 1 >, OutputSize > _weights;

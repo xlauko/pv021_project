@@ -53,13 +53,13 @@ int main() {
 
     std::array< double, 20 > t;
     LstmCell< 10, 20, NeuralFuns<> >::LearningContext c;
-    cell.backwardPropagate( t.data(), t.data(), c );
+    cell.backPropagate( t.data(), t.data(), c );
 
     std::cout << "Sizes: " << cell.inputSize << ", " << cell.outputSize << "\n";
 
     Network< double, MyCell, MyCell, MyCell > network;
     network.forwardPropagate();
     network.evaluate( {} );
-    network.learn( {} );
+    network.learn( {}, 0 );
     return 0;
 }
