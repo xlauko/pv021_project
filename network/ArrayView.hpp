@@ -43,5 +43,9 @@ struct ArrayView {
         return _array[ i ];
     }
 
+    int size() {
+        return Size;
+    }
+
     T *_array;
 };

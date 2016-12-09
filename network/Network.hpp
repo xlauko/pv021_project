@@ -20,7 +20,7 @@ struct Network {
     ArrayView< Double, OutputLayerType::outputSize > output;
 
     using Input = std::array< Double, InputLayerType::inputSize >;
-    using Output = std::array< Double, OutputLayerType::inputSize >;
+    using Output = std::array< Double, OutputLayerType::outputSize >;
 
     Network( )
         : input( std::get< 0 >( _layers )._input ),
@@ -76,16 +76,17 @@ struct Network {
     }
 
     template < class I, class Out >
-    void _backPropagate( Layers& layers, Layers* prev,
+    auto _backPropagate( Layers& layers, Layers* prev,
         std::tuple< GetContext< Cells >... >& ctx, Out& expected, I )
     {
         auto& l = std::get< I::value - 1 >( layers );
         auto* p = prev ? &std::get< I::value - 1 >( *prev ) : nullptr;
         auto in = l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr,
             std::get< _layerCount - 1 >( ctx ) );
-        biElementWise( in.begin(), in.end(), l._input.begin(), in.begin(),
+        biElementWise( l._input.begin(), l._input.end(), in.begin(), in.begin(),
             std::plus< Double >() );
         _backPropagate( layers, prev, ctx, in, std::integral_constant< int, I::value - 1 >() );
+        return in.begin() + l._input.size();
     }
 
     void _updateWeights( Double step, std::tuple< GetContext< Cells >... >& ctx,
@@ -100,7 +101,7 @@ struct Network {
         _updateWeights( step, ctx, std::integral_constant< int, I::value - 1 >() );
     }
 
-    void learn( std::vector< std::pair< Input, Output> > sample, Double step ) {
+    void learn( const std::vector< Input >& sample, Output& out, Double step ) {
         std::vector< Layers > timeSteps;
         Layers *prev = &_layers;
         // Unroll forward propagation in time
@@ -108,14 +109,20 @@ struct Network {
             timeSteps.push_back( *prev );
             prev = &timeSteps.back();
             auto& initial = std::get< 0 >( *prev );
-            std::copy( frame.first.begin(), frame.first.end(), initial._input.begin() );
+            std::copy( frame.begin(), frame.end(), initial._input.begin() );
             forwardPropagate( *prev );
         }
         // Back propage the desired output
         std::tuple< GetContext< Cells >... > context;
-        for ( int i = timeSteps.size() - 1; i >= 0; i-- )
-            _backPropagate( timeSteps[ i ], i ? &( timeSteps[ i - 1 ] ) : nullptr,
-                context, sample[ i ].second, std::integral_constant< int, _layerCount >() );
+        Output dH;
+        biElementWise( output.begin(), output.end(), out.begin(), dH.begin(),
+            [&]( Double rOut, Double eOut ) { return 2 * ( rOut - eOut ); } );
+        for ( int i = timeSteps.size() - 1; i >= 0; i-- ) {
+            auto r =_backPropagate( timeSteps[ i ], i ? &( timeSteps[ i - 1 ] ) : nullptr,
+                context, dH, std::integral_constant< int, _layerCount >() );
+            for ( int i = 0; i != dH.size(); i++ )
+                dH[ i ] *= step;
+        }
         // Propagate weight change
         _updateWeights( step, context, std::integral_constant< int, _layerCount >() );
     }

@@ -60,6 +60,7 @@ int main() {
     Network< double, MyCell, MyCell, MyCell > network;
     network.forwardPropagate();
     network.evaluate( {} );
-    network.learn( {}, 0 );
+    decltype(network)::Output ex;
+    network.learn( {}, ex, 0 );
     return 0;
 }

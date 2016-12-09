@@ -104,19 +104,12 @@ struct LstmCell {
         _outputGate.adjustWeights( c.dOutput, step );
     }
 
-    std::array< Double, InputSize > backPropagate(
-        ArrayView< Double, OutputSize > desiredOutput, // Cannot be null
+    std::array< Double, InputSize + OutputSize> backPropagate(
+        ArrayView< Double, OutputSize > dH, // Cannot be null
         ArrayView< Double, OutputSize > prevMemory,    // Can be null
         LearningContext& context )
     {
         // Follow: http://arunmallya.github.io/writeups/nn/lstm/index.html
-        std::array< Double, OutputSize > dH;
-        biElementWise( _output.begin(), _output.end(), desiredOutput.begin(),
-            dH.begin(),
-            []( Double out, Double ex) {
-                return 2 * ( out - ex );
-            } );
-
         std::array< Double, OutputSize > dO;
         biElementWise( dH.begin(), dH.end(), _memory.begin(), dO.begin(),
             []( Double dh, Double c ) {
@@ -207,8 +200,8 @@ struct LstmCell {
                 [ dop ]( Double x ) { return dop * x; } );
         }
 
-        std::array< Double, InputSize > dInp;
-        for ( int i = 0; i != InputSize; i++ ) {
+        std::array< Double, InputSize + OutputSize > dInp;
+        for ( int i = 0; i != InputSize + OutputSize; i++ ) {
             Double tmp = 0;
             for ( int j = 0; j != OutputSize; j++ )
                 tmp += _forgetGate._weights[ j ][ i ] * dFp[ j ];
