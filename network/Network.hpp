@@ -48,7 +48,7 @@ struct Network {
 
         using A = typename std::remove_reference< decltype( source ) >::type;
         using B = typename std::remove_reference< decltype( target ) >::type;
-        static_assert( A::outputSize == B::inputSize );
+        static_assert( A::outputSize == B::inputSize, "Cell sizes must match" );
 
         source.forwardPropagate();
         std::copy( source._output.begin(), source._output.end(),
