@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <array>
+#include <random>
 #include <algorithm>
 #include <iostream>
 #include <exception>
