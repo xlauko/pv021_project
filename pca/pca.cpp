@@ -43,7 +43,7 @@ cv::PCA compute_pca( std::vector< cv::String > filenames ) {
     return pca;
 }
 
-int main( int argc, char** argv )
+/*int main( int argc, char** argv )
 {
     if( argc != 3 ) {
         std::cout <<" Usage: pca <data set path> <out>" << std::endl;
@@ -59,4 +59,4 @@ int main( int argc, char** argv )
     serial::save_pca( argv[2], pca );
 
     return 0;
-}
+}*/

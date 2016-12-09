@@ -1,32 +1,30 @@
-#include <opencv2/core/core.hpp>
-#include <opencv2/opencv.hpp>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <iostream>
-
-#include "serialization.hpp"
-#include "filter.hpp"
-
+#include "transform.hpp"
 using Image = cv::Mat;
 
 Image to_pca( Image & img, std::string pca_path ) {
     auto pca = serial::load_pca( pca_path );
+    return to_pca( img, pca );
+}
 
+Image to_pca( Image & img, cv::PCA & pca ) {
     auto filtered = filter::filter( img );
 
     Image row = filtered.clone().reshape( 1, 1 );
     return pca.project( row );
 }
 
-
-Image from_pca( std::string path, std::string pca_path ) {
-    auto img_pca = serial::load_img_pca( path );
+Image from_pca( const std::string & path, const std::string & pca_path ) {
     auto pca = serial::load_pca( pca_path );
+    return from_pca( path, pca );
+}
+
+Image from_pca( const std::string & path, cv::PCA & pca ) {
+    auto img_pca = serial::load_img_pca( path );
     Image reconstructed = pca.backProject( std::get<0>( img_pca ) );
     return reconstructed.reshape( 1, std::get<1>( img_pca ) );
 }
 
-int main( int argc, char** argv )
+/*int main( int argc, char** argv )
 {
     if( argc != 5 ) {
         std::cout <<" Usage: transform -{t/f} <img> <pca path> <out>" << std::endl;
@@ -53,4 +51,4 @@ int main( int argc, char** argv )
     }
 
     return 0;
-}
+}*/

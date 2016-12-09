@@ -18,7 +18,7 @@ namespace {
     }
 }
 
-Image filter ( Image & img ) {
+static Image filter ( Image & img ) {
 	Image res;
     auto map = get_map( img );
 	cv::Canny( img, res, 40, 200, 3 );
