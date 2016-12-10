@@ -49,7 +49,11 @@ struct NeuralLayer {
     NeuralLayer( ArrayView< Double, InputSize > input ) : _input( input ) {};
     NeuralLayer( std::array< Double, InputSize >& input )
         : _input( input.data() )
-    {};
+    {
+        for ( auto& x : _weights )
+            std::fill( x.begin(), x.end(), Double( 0.0 ) );
+        clear();
+    };
 
     void forwardPropagate() {
         assert( _input );

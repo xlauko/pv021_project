@@ -64,6 +64,19 @@ struct Network {
         }
     }
 
+    void randomizeWeights( Double min, Double max ) {
+        _randomizeWeights( min, max, std::integral_constant< int, _layerCount >() );
+    }
+
+    void _randomizeWeights( Double min, Double max, std::integral_constant< int, 0 >)
+    {}
+
+    template < class I >
+    void _randomizeWeights( Double min, Double max, I ) {
+        std::get< I::value - 1 >( _layers ).randomizeWeights( min, max );
+        _randomizeWeights( min, max, std::integral_constant< int, I::value - 1 >() );
+    }
+
     template < class Out >
     void _backPropagate( Layers& layers, Layers* prev,
         std::tuple< GetContext< Cells >... >& ctx, Out& expected,
