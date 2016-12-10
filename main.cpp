@@ -2,6 +2,7 @@
 #include <fstream>
 #include <tuple>
 #include <utility>
+#include <iomanip>
 
 #include "network/LstmCell.hpp"
 #include "network/Network.hpp"
@@ -58,6 +59,29 @@ void learn( PCA& pca, Network& network, std::vector< std::string >& paths, std::
 
 
 int main() {
+    std::cout << std::fixed << std::setprecision(5);
+    using MyCell = LstmCell< 2, 2, NeuralFuns<> >;
+    using Net = Network< double, MyCell, MyCell, MyCell >;
+
+    std::vector< std::array< double, 2 > > in;
+    for ( int i = 0; i != 2; i++ ) {
+        in.push_back( {1, 2} );
+    }
+
+    Net n;
+    n.randomizeWeights( 0, 1 );
+    for ( int i = 0; i != 1; i++ ) {
+        std::array< double, 2 > o{ 1, 0 };
+        n.learn( in, o, 0.1);
+    }
+
+    n.evaluate( in );
+    for ( auto x : n.output )
+        std::cout << x << ", ";
+
+    return 0;
+
+
     const std::string path = "test.pca";
     const std::string img = "2015-12-24-23-45.jpg";
 

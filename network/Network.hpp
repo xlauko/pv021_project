@@ -110,6 +110,8 @@ struct Network {
     void _updateWeights( Double step, std::tuple< GetContext< Cells >... >& ctx, I ) {
         auto& dw = std::get< I::value - 1 >( ctx );
         auto& l = std::get< I::value - 1 >( _layers );
+        std::cout << "Updating layer " << I::value << " with context:\n";
+        std::cout << dw << "\n";
         l.adjustWeights( dw, step );
         _updateWeights( step, ctx, std::integral_constant< int, I::value - 1 >() );
     }

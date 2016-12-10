@@ -95,6 +95,16 @@ struct LstmCell {
         Weights dModulate;
         Weights dInput;
         Weights dOutput;
+
+        friend std::ostream& operator<<( std::ostream& o, const LearningContext& ctx )
+        {
+            o << "forgetGrad:\n" << ctx.dForget << "\n";
+            o << "inputGrad:\n" << ctx.dInput << "\n";
+            o << "modulateGrad:\n" << ctx.dModulate << "\n";
+            o << "outputGrad:\n" << ctx.dOutput << "\n";
+            return o;
+        }
+
     };
 
     void adjustWeights( LearningContext& c, Double step ) {
@@ -305,4 +315,15 @@ void read( std::istream& s, LstmCell< InputSize, OutputSize, Funs, Double>& c ) 
     read( s, c._modulateGate );
     read( s, c._inputGate );
     read( s, c._outputGate );
+}
+
+template < int InputSize, int OutputSize, class Funs, class Double >
+std::ostream& operator<<( std::ostream& o,
+    const LstmCell< InputSize, OutputSize, Funs, Double >& cell )
+{
+    o << "ForgetGate:\n" << cell._forgetGate << "__________\n";
+    o << "InputGate:\n" << cell._inputGate << "__________\n";
+    o << "ModulateGate:\n" << cell._modulateGate << "__________\n";
+    o << "OutputGate:\n" << cell._outputGate << "__________\n";
+    return o;
 }
