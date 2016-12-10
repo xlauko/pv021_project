@@ -119,7 +119,6 @@ struct LstmCell {
         ArrayView< Double, OutputSize > prevMemory,    // Can be null
         LearningContext& context )
     {
-        std::cout << "Backprop issued with ctx:\n" << context << "\n";
         // Follow: http://arunmallya.github.io/writeups/nn/lstm/index.html
         std::array< Double, OutputSize > dO;
         biElementWise( dH.begin(), dH.end(), _memory.begin(), dO.begin(),
@@ -180,7 +179,7 @@ struct LstmCell {
 
         std::array< Double, OutputSize > dOp;
         biElementWise( dO.begin(), dO.end(), _outputGate._output.begin(),
-            dIp.begin(),
+            dOp.begin(),
             []( Double d, Double o ) {
                 return d * o * ( Double( 1.0 ) - o );
             } );
@@ -224,8 +223,6 @@ struct LstmCell {
                 tmp += _outputGate._weights[ j ][ i ] * dOp[ j ];
             dInp[ i ] = tmp;
         }
-
-        std::cout << "Backprop finished with ctx:\n" << context << "\n\n\n";
 
         return dInp;
     }
@@ -329,5 +326,6 @@ std::ostream& operator<<( std::ostream& o,
     o << "ModulateGate:\n" << cell._modulateGate << "__________\n";
     o << "OutputGate:\n" << cell._outputGate << "__________\n";
     o << "Output:\n\t" << cell._concatInput << "\n";
+    o << "Memory:\n\t" << cell._memory << "\n";
     return o;
 }

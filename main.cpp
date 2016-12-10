@@ -69,10 +69,10 @@ int main() {
     }
 
     Net n;
-    n.randomizeWeights( 0, 1 );
-    for ( int i = 0; i != 1; i++ ) {
+    n.randomizeWeights( -1, 1 );
+    for ( int i = 0; i != 1000; i++ ) {
         std::array< double, 2 > o{ 1, 0 };
-        n.learn( in, o, 1);
+        n.learn( in, o, 0.1);
     }
 
     n.evaluate( in );
