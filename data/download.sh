@@ -17,8 +17,11 @@ while [ "$d" != "$end" ]; do
     echo $d
     dat=`date -d "$d" "+%d-%m-%Y"`
     tim=`date -d "$d" "+%H-%M"`
+    nam=`date -d "$d" "+%Y-%m-%d-%H-%M"`
     wget "http://neige.meteociel.fr/satellite/archives/$dat/satir-$tim.gif" \
-        -O `date -d "$d" "+%Y-%m-%d-%H-%M.jpg"`
+        -O "$nam.gif"
+    convert "$nam.gif" "$nam.jpg"
+    rm "$nam.gif"
     d=`date -Iseconds -d "$d + 15 minutes"`
     sleep $[ ( $RANDOM % 3 )  + 1 ]s
     # http://neige.meteociel.fr/satellite/archives/04-04-2016/satir-02-30.gif
