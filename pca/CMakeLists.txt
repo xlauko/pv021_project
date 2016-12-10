@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-project( pv021 )
-find_package( OpenCV REQUIRED )
-add_executable( pca pca.cpp )
-target_link_libraries( pca ${OpenCV_LIBS} )
-add_executable( transform transform.cpp )
-target_link_libraries( transform ${OpenCV_LIBS} )
