@@ -40,20 +40,21 @@ void learn( PCA& pca, Network& network, std::vector< std::string >& paths, std::
         Image img = cv::imread( path, CV_LOAD_IMAGE_GRAYSCALE);
         auto transformed = to_pca( img, pca );
         assert( transformed.cols == input_size );
-        imgs.push_back( to_array( transformed ) );
+        for (int i = 0; i < 10; ++i )
+            imgs.push_back( to_array( transformed ) );
     }
     std::cout << "Learning..." << std::endl;
     Image exp_img = cv::imread( exp, CV_LOAD_IMAGE_GRAYSCALE);
     auto exp_out = to_pca( exp_img, pca );
 
     LSTMNetwork::Output ex = to_array( exp_out );
-    /*network.learn( imgs, ex, 10 );
-    for ( auto a: output )
-        std::cout << a << std::endl;
-*/
-    network.evaluate( imgs );
+    network.randomizeWeights(-1, 1);
+    network.learn( imgs, ex, 100 );
     for ( auto a: network.output )
         std::cout << a << std::endl;
+    /*network.evaluate( imgs );
+    for ( auto a: network.output )
+        std::cout << a << std::endl;*/
 }
 
 
