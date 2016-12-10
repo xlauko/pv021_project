@@ -75,9 +75,9 @@ int main() {
         n.learn( in, o, 0.1);
     }
 
-    n.evaluate( in );
+    /*n.evaluate( in );
     for ( auto x : n.output )
-        std::cout << x << ", ";
+        std::cout << x << ", ";*/
 
     return 0;
 

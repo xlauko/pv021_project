@@ -49,3 +49,13 @@ struct ArrayView {
 
     T *_array;
 };
+
+template < class T, int size >
+std::ostream& operator<<( std::ostream& o, const ArrayView< T, size >& l ) {
+    bool first = true;
+    for ( const T w : l ) {
+        o << (first ? "" : ", ") << w;
+        first = false;
+    }
+    return o;
+}

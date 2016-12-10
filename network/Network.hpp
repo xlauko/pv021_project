@@ -37,7 +37,11 @@ struct Network {
 
     void _forwardPropagate( Layers& l, std::integral_constant< int, 1 > ) {
         const int idx = _layerCount - 1;
+        std::cout << "Before propagation of layer " << idx << "\n";
+        std::cout << std::get< idx >( l ) << "\n";
         std::get< idx >( l ).forwardPropagate();
+        std::cout << "After propagation of layer " << idx << "\n";
+        std::cout << std::get< idx >( l ) << "\n";
     }
 
     template < class I >
@@ -50,7 +54,11 @@ struct Network {
         using B = typename std::remove_reference< decltype( target ) >::type;
         static_assert( A::outputSize == B::inputSize, "Cell sizes must match" );
 
+        std::cout << "Before propagation of layer " << idx << "\n";
+        std::cout << source << "\n";
         source.forwardPropagate();
+        std::cout << "After propagation of layer " << idx << "\n";
+        std::cout << source << "\n";
         std::copy( source._output.begin(), source._output.end(),
             target._input.begin() );
 
@@ -82,20 +90,25 @@ struct Network {
         std::tuple< GetContext< Cells >... >& ctx, Out& expected,
         std::integral_constant< int, 1 > )
     {
+        std::cout << "========Back propagating layer " << 1 << " ===========\n";
         auto& l = std::get< 0 >( layers );
         auto* p = prev ? &std::get< 0 >( *prev ) : nullptr;
-        l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr,
-            std::get< _layerCount - 1 >( ctx ) );
+        auto& c = std::get< _layerCount - 1 >( ctx );
+        l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr, c );
     }
 
     template < class I, class Out >
     auto _backPropagate( Layers& layers, Layers* prev,
         std::tuple< GetContext< Cells >... >& ctx, Out& expected, I )
     {
+        std::cout << "========Back propagating layer " << I::value << " ===========\n";
+        std::cout << "Error: " << expected << "\n";
         auto& l = std::get< I::value - 1 >( layers );
         auto* p = prev ? &std::get< I::value - 1 >( *prev ) : nullptr;
-        auto in = l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr,
-            std::get< _layerCount - 1 >( ctx ) );
+        auto& c = std::get< _layerCount - 1 >( ctx );
+        auto in = l.backPropagate( expected.data(),
+            p ? p->_memory.data() : nullptr,  c );
+        std::cout << "Result of backprop: " << in << "\n";
         biElementWise( l._input.begin(), l._input.end(), in.begin(), in.begin(),
             std::plus< Double >() );
         _backPropagate( layers, prev, ctx, in, std::integral_constant< int, I::value - 1 >() );
@@ -121,11 +134,14 @@ struct Network {
         Layers *prev = &_layers;
         // Unroll forward propagation in time
         for ( const auto& frame : sample ) {
+            std::cout << "Forward unroll============================\n";
             timeSteps.push_back( *prev );
             prev = &timeSteps.back();
             auto& initial = std::get< 0 >( *prev );
             std::copy( frame.begin(), frame.end(), initial._input.begin() );
+            std::cout << "input value: " << initial._input << "\n";
             forwardPropagate( *prev );
+            std::cout << "============================Forward unroll\n\n\n\n\n";
         }
         // Back propage the desired output
         std::tuple< GetContext< Cells >... > context;

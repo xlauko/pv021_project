@@ -96,17 +96,20 @@ struct NeuralLayer {
     std::array< std::array< Double, InputSize + 1 >, OutputSize > _weights;
 };
 
+template < class T, size_t size >
+std::ostream& operator<<( std::ostream& o, const std::array< T, size >& l ) {
+    bool first = true;
+    for ( const T w : l ) {
+        o << (first ? "" : ", ") << w;
+        first = false;
+    }
+    return o;
+}
+
 template < class T, size_t size1, size_t size2 >
 std::ostream& operator<<( std::ostream& o, const std::array< std::array< T, size2 >, size1 >& l ) {
-    for ( int i = 0; i != size1; i++ ) {
-        o << "N" << i << ":";
-        bool first = true;
-        for ( const T w : l[ i ] ) {
-            o << ", " << w;
-            first = false;
-        }
-        o << "\n";
-    }
+    for ( int i = 0; i != size1; i++ )
+        o << "N" << i << ": " << l[ i ] << "\n";
     return o;
 }
 
