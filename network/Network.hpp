@@ -93,7 +93,7 @@ struct Network {
         std::cout << "========Back propagating layer " << 1 << " ===========\n";
         auto& l = std::get< 0 >( layers );
         auto* p = prev ? &std::get< 0 >( *prev ) : nullptr;
-        auto& c = std::get< _layerCount - 1 >( ctx );
+        auto& c = std::get< 0 >( ctx );
         l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr, c );
     }
 
@@ -105,7 +105,7 @@ struct Network {
         std::cout << "Error: " << expected << "\n";
         auto& l = std::get< I::value - 1 >( layers );
         auto* p = prev ? &std::get< I::value - 1 >( *prev ) : nullptr;
-        auto& c = std::get< _layerCount - 1 >( ctx );
+        auto& c = std::get< I::value - 1 >( ctx );
         auto in = l.backPropagate( expected.data(),
             p ? p->_memory.data() : nullptr,  c );
         std::cout << "Result of backprop: " << in << "\n";
