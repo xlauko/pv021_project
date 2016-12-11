@@ -20,9 +20,12 @@ struct NeuralFuns {
 };
 
 constexpr size_t input_size = 17; //pca.eigenvalues.rows;
+constexpr size_t batch_size = 10; //pca.eigenvalues.rows;
 using Cell = LstmCell< input_size, input_size, NeuralFuns<> >;
-using LSTMNetwork = Network< double, Cell, Cell, Cell >;
+using Net = Network< double, Cell, Cell >;
+
 using Input = std::array< double, input_size >;
+using Output = std::array< double, input_size >;
 
 Input to_array( Image & pca ) {
     std::vector< double > v;
@@ -32,35 +35,52 @@ Input to_array( Image & pca ) {
     return arr;
 }
 
+struct Batch {
+    Output _ex;
+};
+
 template< typename PCA, typename Network >
-void learn( PCA& pca, Network& network, std::vector< std::string >& paths, std::string exp ) {
+void learn( PCA& pca, Network& n, std::vector< std::string >& paths ) {
     std::vector< Input > imgs;
+    double scale = 1;
+
     std::cout << "Loading input..." << std::endl;
+    std::vector< Image > loaded;
     for ( auto & path : paths ) {
         Image img = cv::imread( path, CV_LOAD_IMAGE_GRAYSCALE);
         auto transformed = to_pca( img, pca );
         assert( transformed.cols == input_size );
-        for (int i = 0; i < 10; ++i )
-            imgs.push_back( to_array( transformed ) );
-    }
-    std::cout << "Learning..." << std::endl;
-    Image exp_img = cv::imread( exp, CV_LOAD_IMAGE_GRAYSCALE);
-    auto exp_out = to_pca( exp_img, pca );
 
-    LSTMNetwork::Output ex = to_array( exp_out );
-    network.randomizeWeights(-1, 1);
-    network.learn( imgs, ex, 100 );
-    for ( auto a: network.output )
-        std::cout << a << std::endl;
-    /*network.evaluate( imgs );
-    for ( auto a: network.output )
-        std::cout << a << std::endl;*/
+        double max, min;
+        cv::minMaxLoc( transformed, &min, &max );
+        max = std::fabs( min ) > max ? std::fabs( min ) : max;
+        scale = scale < max ? max : scale;
+
+        loaded.push_back( transformed );
+    }
+
+    for ( auto & img : loaded ) {
+        img = img / scale;
+        imgs.push_back( to_array( img ) );
+    }
+
+    std::cout << "Learning..." << std::endl;
+    n.randomizeWeights(-1, 1);
+    for ( int i = 0; i < imgs.size() - batch_size - 1; ++i ) {
+        ArrayView< Input, batch_size > batch = &imgs[ i ];
+        Input ex = imgs[ i + batch_size ];
+        n.learn( { batch.begin(), batch.end() }, ex, 1 );
+    }
+
+    ArrayView< Input, batch_size > test = &imgs[ 0 ];
+    n.evaluate( { test.begin(), test.end() } );
+    std::cout << n.output << std::endl;
 }
 
 
 
 int main() {
-    std::cout << std::fixed << std::setprecision(5);
+    /*std::cout << std::fixed << std::setprecision(5);
     using MyCell = LstmCell< 2, 2, NeuralFuns<> >;
     using Net = Network< double, MyCell, MyCell, MyCell >;
 
@@ -81,18 +101,20 @@ int main() {
         std::cout << x << ", ";
 
     return 0;
-
+*/
 
     const std::string path = "test.pca";
-    const std::string img = "2015-12-24-23-45.jpg";
+    const std::string in = "data"; //argv[1];
+
+    std::vector< std::string > filenames;
+    cv::glob( in, filenames );
 
     std::cout << "Loading pca..." <<std::endl;
     auto pca = serial::load_pca( path );
     assert( pca.eigenvalues.rows == input_size );
 
-    LSTMNetwork network;
-    std::vector< std::string > paths = { img };
-    learn< decltype(pca), LSTMNetwork >( pca, network, paths, img );
+    Net network;
+    learn< decltype(pca), Net >( pca, network, filenames );
 
     /*std::tuple< int, int, int > tup( 42, 43, 44 );
 

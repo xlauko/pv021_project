@@ -119,6 +119,9 @@ struct LstmCell {
         ArrayView< Double, OutputSize > prevMemory,    // Can be null
         LearningContext& context )
     {
+#if DEBUG
+        std::cout << "Backprop issued with ctx:\n" << context << "\n";
+#endif
         // Follow: http://arunmallya.github.io/writeups/nn/lstm/index.html
         std::array< Double, OutputSize > dO;
         biElementWise( dH.begin(), dH.end(), _memory.begin(), dO.begin(),
@@ -224,6 +227,9 @@ struct LstmCell {
             dInp[ i ] = tmp;
         }
 
+#if DEBUG
+        std::cout << "Backprop finished with ctx:\n" << context << "\n\n\n";
+#endif
         return dInp;
     }
 
