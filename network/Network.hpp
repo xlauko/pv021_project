@@ -42,7 +42,9 @@ struct Network {
 #if DEBUG
         std::cout << "Before propagation of layer " << idx << "\n";
         std::cout << std::get< idx >( l ) << "\n";
+#endif
         std::get< idx >( l ).forwardPropagate();
+#if DEBUG
         std::cout << "After propagation of layer " << idx << "\n";
         std::cout << std::get< idx >( l ) << "\n";
 #endif

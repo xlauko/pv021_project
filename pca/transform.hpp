@@ -15,3 +15,4 @@ Image to_pca( Image & img, cv::PCA & pca );
 Image to_pca( Image & img, std::string & pca_path );
 Image from_pca( const std::string & path, cv::PCA & pca );
 Image from_pca( const std::string & path, const std::string & pca_path );
+Image from_pca( Image & img_pca, size_t rows, cv::PCA & pca );

@@ -24,6 +24,11 @@ Image from_pca( const std::string & path, cv::PCA & pca ) {
     return reconstructed.reshape( 1, std::get<1>( img_pca ) );
 }
 
+Image from_pca( Image & img_pca, size_t rows, cv::PCA & pca ) {
+    Image reconstructed = pca.backProject( img_pca );
+    return reconstructed.reshape( 1, rows );
+}
+
 /*int main( int argc, char** argv )
 {
     if( argc != 5 ) {
