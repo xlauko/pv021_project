@@ -184,3 +184,47 @@ struct Network {
 
 
 };
+
+namespace {
+template < class... Items >
+void read( std::istream&, std::tuple< Items... >&, std::integral_constant< int, 0 > ) {}
+
+template < class... Items, class I >
+void read( std::istream& s, std::tuple< Items... >& tup, I ) {
+    auto& i = std::get< I::value - 1 >( tup );
+    read( s, i );
+    read( s, tup, std::integral_constant< int, I::value - 1 >() );
+}
+
+template < class... Items >
+void write( std::ostream&, const std::tuple< Items... >&, std::integral_constant< int, 0 > ) {}
+
+template < class... Items, class I >
+void write( std::ostream& s, const std::tuple< Items... >& tup, I ) {
+    const auto& i = std::get< I::value - 1 >( tup );
+    write( s, i );
+    write( s, tup, std::integral_constant< int, I::value - 1 >() );
+}
+
+} // namespace
+
+template < class... Items >
+void read( std::istream& s, std::tuple< Items... >& tup ) {
+    read( s, tup, std::integral_constant< int, sizeof...( Items ) >() );
+}
+
+template < class... Items >
+void write( std::ostream& s, const std::tuple< Items... >& tup) {
+    write( s, tup, std::integral_constant< int, sizeof...( Items ) >() );
+}
+
+
+template < class Double, class... Cells >
+void read( std::istream& s, Network< Double, Cells... >& n ) {
+    read( s, n._layers );
+}
+
+template < class Double, class... Cells >
+void write( std::ostream& s, const Network< Double, Cells... >& n ) {
+    write( s, n._layers );
+}

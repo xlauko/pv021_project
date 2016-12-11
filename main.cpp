@@ -105,5 +105,9 @@ int main() {
     Net network;
     learn< decltype(pca), Net >( pca, network, filenames );
 
+    // Test read/write
+    std::ofstream fo( "network.dat" );
+    write( fo, network );
+
     return 0;
 }
