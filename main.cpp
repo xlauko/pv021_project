@@ -35,10 +35,6 @@ Input to_array( Image & pca ) {
     return arr;
 }
 
-struct Batch {
-    Output _ex;
-};
-
 template< typename PCA, typename Network >
 void learn( PCA& pca, Network& n, std::vector< std::string >& paths ) {
     std::vector< Input > imgs;
