@@ -149,6 +149,8 @@ struct LstmCell {
             biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
                 prevMemory.begin(), dF.begin(),
                 std::multiplies< Double >() );
+        else
+            std::fill( dF.begin(), dF.end(), Double( 0.0 ) );
 
         std::array< Double, OutputSize > dA;
         biElementWise( context.memoryGradient.begin(), context.memoryGradient.end(),
