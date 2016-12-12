@@ -146,8 +146,21 @@ struct Network {
         _updateWeights( step, ctx, std::integral_constant< int, I::value - 1 >() );
     }
 
+    void clear() {
+        _clear( std::integral_constant< int, _layerCount >() );
+    }
+
+    void _clear( std::integral_constant< int, 0> ) {}
+
+    template < class I >
+    void _clear( I ) {
+        std::get< I::value - 1 >( _layers ).clear();
+        _clear( std::integral_constant< int, I::value - 1 >() );
+    }
+
     void learn( const std::vector< Input >& sample, Output& out, Double step ) {
         std::vector< Layers > timeSteps;
+        clear();
         Layers *prev = &_layers;
         // Unroll forward propagation in time
         for ( const auto& frame : sample ) {

@@ -74,7 +74,7 @@ void learn( PCA& pca, Network& n, std::vector< cv::String >& paths ) {
     	}
     }
 
-    ArrayView< Input, batch_size > test = &imgs[ i ];
+    ArrayView< Input, batch_size > test = &imgs[ 0 ];
     n.evaluate( { test.begin(), test.end() } );
     std::cout << n.output << std::endl;
     //std::cout << imgs[ batch_size ] << std::endl;
