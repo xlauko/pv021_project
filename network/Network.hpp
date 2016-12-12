@@ -117,7 +117,7 @@ struct Network {
         std::cout << "Error: " << expected << "\n";
 #endif
         auto& l = std::get< I::value - 1 >( layers );
-        auto* p = prev ? &std::get< I::value - 1 >( *prev ) : nullptr;
+        auto* p = prev ? &std::get< I::value - 2 >( *prev ) : nullptr;
         auto& c = std::get< I::value - 1 >( ctx );
         auto in = l.backPropagate( expected.data(),
             p ? p->_memory.data() : nullptr,  c );
