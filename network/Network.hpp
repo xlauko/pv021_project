@@ -97,16 +97,8 @@ struct Network {
     template < class Out >
     void _backPropagate( Layers& layers, Layers* prev,
         std::tuple< GetContext< Cells >... >& ctx, Out& expected,
-        std::integral_constant< int, 1 > )
-    {
-#if DEBUG
-        std::cout << "========Back propagating layer " << 1 << " ===========\n";
-#endif
-        auto& l = std::get< 0 >( layers );
-        auto* p = prev ? &std::get< 0 >( *prev ) : nullptr;
-        auto& c = std::get< 0 >( ctx );
-        l.backPropagate( expected.data(), p ? p->_memory.data() : nullptr, c );
-    }
+        std::integral_constant< int, 0 > )
+    { }
 
     template < class I, class Out >
     auto _backPropagate( Layers& layers, Layers* prev,
@@ -117,7 +109,7 @@ struct Network {
         std::cout << "Error: " << expected << "\n";
 #endif
         auto& l = std::get< I::value - 1 >( layers );
-        auto* p = prev ? &std::get< I::value - 2 >( *prev ) : nullptr;
+        auto* p = prev ? &std::get< I::value - 1 >( *prev ) : nullptr;
         auto& c = std::get< I::value - 1 >( ctx );
         auto in = l.backPropagate( expected.data(),
             p ? p->_memory.data() : nullptr,  c );
