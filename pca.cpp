@@ -21,7 +21,7 @@ Image reshape_images( std::vector< Image > & data ) {
     return res;
 }
 
-cv::PCA compute_pca( std::vector< cv::String > filenames ) {
+cv::PCA compute_pca( std::vector< cv::String >& filenames ) {
     std::vector< Image > imgs;
 
     for ( auto name : filenames ) {
@@ -49,7 +49,7 @@ int main( int argc, char** argv )
         return -1;
     }
 
-    std::vector< std::string > filenames;
+    std::vector< cv::String > filenames;
     const std::string folder = argv[1];
     cv::glob( folder, filenames );
 
