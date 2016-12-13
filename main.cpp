@@ -27,6 +27,9 @@ using Net = Network< double, Cell, Cell >;
 using Input = std::array< double, input_size >;
 using Output = std::array< double, input_size >;
 
+double scale = 1;
+size_t rows = 1;
+
 Input to_array( Image & pca ) {
     std::vector< double > v;
     pca.row(0).copyTo( v );
@@ -35,11 +38,8 @@ Input to_array( Image & pca ) {
     return arr;
 }
 
-template< typename PCA, typename Network >
-void learn( PCA& pca, Network& n, std::vector< cv::String >& paths ) {
-    double scale = 1;
-    size_t rows = 1;
-
+template< typename PCA >
+std::vector< Input > loadInput( std::vector< cv::String >& paths, PCA& pca ) {
     std::cout << "Loading input..." << std::endl;
     std::vector< Image > loaded;
     for ( auto & path : paths ) {
@@ -57,44 +57,58 @@ void learn( PCA& pca, Network& n, std::vector< cv::String >& paths ) {
     }
 
     std::vector< Input > imgs;
-    //std::cout << loaded[ 0 ] << std::endl;
     for ( auto & img : loaded ) {
         img = img / scale;
         imgs.push_back( to_array( img ) );
     }
+}
 
+template< typename PCA, typename Network >
+void learn( PCA& pca, Network& n, std::vector< cv::String >& paths, int ite ) {
+    auto imgs = loadInput< PCA >( paths, pca );
     std::cout << "Learning..." << std::endl;
-    n.randomizeWeights(-1, 1);
-    for ( int k = 0; k < 3; ++k ) {
-	std::cout << "Learning round: " << k << std::endl;
-	for ( int i = 0; i < imgs.size() - batch_size - 1; ++i ) {
-        	ArrayView< Input, batch_size > batch = &imgs[ i ];
-        	Input ex = imgs[ i + batch_size ];
-        	n.learn( { batch.begin(), batch.end() }, ex, 1 );
-    	}
+    for ( int k = 0; k < ite; ++k ) {
+        std::cout << "Learning round: " << k << std::endl;
+        for ( int i = 0; i < imgs.size() - batch_size - 1; ++i ) {
+            ArrayView< Input, batch_size > batch = &imgs[ i ];
+            Input ex = imgs[ i + batch_size ];
+            n.learn( { batch.begin(), batch.end() }, ex, 1 );
+        }
     }
+}
+
+template< typename PCA, typename Network >
+void evaluate( PCA& pca, Network& n, std::vector< cv::String >& paths ) {
+    auto imgs = loadInput< PCA >( paths, pca );
+    std::cout << "Evaluating..." << std::endl;
 
     ArrayView< Input, batch_size > test = &imgs[ 0 ];
     n.evaluate( { test.begin(), test.end() } );
-    std::cout << n.output << std::endl;
-    //std::cout << imgs[ batch_size ] << std::endl;
 
-    //auto img_pca = cv::Mat( { n.output.begin(), n.output.end() }, true );
-    auto img_pca = cv::Mat( 1, input_size, CV_64F, n.output.begin() );
-    img_pca = img_pca * scale;
-    //std::cout << img_pca << std::endl;
-    auto image = from_pca( img_pca, rows, pca );
-    cv::imwrite( "train.jpg", image );
-    //cv::namedWindow( "PCA", cv::WINDOW_AUTOSIZE );
-    //cv::imshow( "PCA", image );
-    //cv::waitKey(0);
 }
 
+int main( int argc, const char* argv[] )
+{
+    std::string keys = {
+        "{ data | | data path }"
+        "{ pca     | | pca path }"
+        "{ learn   |1 | learn if 1 else evaluate }"
+        "{ o       |eval.jpg | evaluated output }"
+        "{ s       | | save network to given path }"
+        "{ l       | | load network from given path }"
+        "{ ite     |1| number of learning iterations }"
+    };
 
+    cv::CommandLineParser cmd( argc, argv, keys.c_str() );
 
-int main() {
-    const std::string path = "jan-2015.pca";
-    const std::string in = "jan-2015"; //argv[1];
+    if( argc < 3 )
+    {
+        cmd.printParams();
+        return 0;
+    }
+
+    const std::string path = cmd.get<std::string>("pca");
+    const std::string in = cmd.get<std::string>("data");
 
     std::vector< cv::String > filenames;
     cv::glob( in, filenames );
@@ -102,14 +116,38 @@ int main() {
     std::cout << "Loading pca..." <<std::endl;
     auto pca = serial::load_pca( path );
     std::cout << pca.eigenvalues.rows;
-    assert( pca.eigenvalues.rows == input_size );
+    assert( pca.eigenvalues.rows == input_size
+        && "Change input_size in main.cpp to correct pca size." );
 
     Net network;
-    learn< decltype(pca), Net >( pca, network, filenames );
 
-    // Test read/write
-    std::ofstream fo( "long.dat" );
-    write( fo, network );
+    auto l = cmd.get< std::string >( "l" );
+    if ( l != "" ) {
+        std::ifstream fi( l );
+        read( fi, network );
+    } else {
+        network.randomizeWeights(-1, 1);
+    }
+
+    bool tolearn = cmd.get< bool >( "learn" );
+
+    if ( tolearn ) {
+        int ite = cmd.get< int >( "ite" );
+        learn< decltype(pca), Net >( pca, network, filenames, ite );
+    } else {
+        evaluate< decltype(pca), Net >( pca, network, filenames );
+        auto img_pca = cv::Mat( 1, input_size, CV_64F, network.output.begin() );
+        img_pca = img_pca * scale;
+        auto image = from_pca( img_pca, rows, pca );
+        auto o = cmd.get< std::string >( "o" );
+        cv::imwrite( o, image );
+    }
+
+    auto s = cmd.get< std::string >( "s" );
+    if ( s != "" ) {
+        std::ofstream fo( s );
+        write( fo, network );
+    }
 
     return 0;
 }
