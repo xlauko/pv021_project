@@ -19,7 +19,7 @@ struct NeuralFuns {
     using normalize = Tanh< Double >;
 };
 
-constexpr size_t input_size = 170; //pca.eigenvalues.rows;
+constexpr size_t input_size = 128; //pca.eigenvalues.rows;
 constexpr size_t batch_size = 7;
 using Cell = LstmCell< input_size, input_size, NeuralFuns<> >;
 using Net = Network< double, Cell, Cell >;
@@ -42,7 +42,7 @@ template< typename PCA >
 std::vector< Input > loadInput( std::vector< cv::String >& paths, PCA& pca ) {
     std::cout << "Loading input..." << std::endl;
     std::vector< Image > loaded;
-    for ( auto & path : paths ) {
+    for ( const auto & path : paths ) {
         Image img = cv::imread( path, CV_LOAD_IMAGE_GRAYSCALE);
         rows = img.rows;
         auto transformed = to_pca( img, pca );
@@ -61,6 +61,8 @@ std::vector< Input > loadInput( std::vector< cv::String >& paths, PCA& pca ) {
         img = img / scale;
         imgs.push_back( to_array( img ) );
     }
+
+    return imgs;
 }
 
 template< typename PCA, typename Network >
@@ -84,7 +86,6 @@ void evaluate( PCA& pca, Network& n, std::vector< cv::String >& paths ) {
 
     ArrayView< Input, batch_size > test = &imgs[ 0 ];
     n.evaluate( { test.begin(), test.end() } );
-
 }
 
 int main( int argc, const char* argv[] )
@@ -103,7 +104,7 @@ int main( int argc, const char* argv[] )
 
     if( argc < 3 )
     {
-        cmd.printParams();
+        cmd.printMessage();
         return 0;
     }
 
@@ -113,9 +114,9 @@ int main( int argc, const char* argv[] )
     std::vector< cv::String > filenames;
     cv::glob( in, filenames );
 
-    std::cout << "Loading pca..." <<std::endl;
+    std::cout << "Loading PCA..." << path << std::endl;
     auto pca = serial::load_pca( path );
-    std::cout << pca.eigenvalues.rows;
+    std::cout << "PCA size: " << pca.eigenvalues.rows << std::endl;
     assert( pca.eigenvalues.rows == input_size
         && "Change input_size in main.cpp to correct pca size." );
 
@@ -129,7 +130,7 @@ int main( int argc, const char* argv[] )
         network.randomizeWeights(-1, 1);
     }
 
-    bool tolearn = cmd.get< bool >( "learn" );
+    bool tolearn = cmd.get< int >( "learn" );
 
     if ( tolearn ) {
         int ite = cmd.get< int >( "ite" );
