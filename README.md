@@ -42,4 +42,4 @@ To run lstm network in evaluation mode run following command:
     ./lstm --data=[data set path] --pca=[path to pca matrix] --l=[network path] --o=[result.jpg]
 ```
 
-The network will load first 7 images from data set and comput the following one.
+The network will load first 7 images from data set and computes the following one.
