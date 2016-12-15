@@ -19,7 +19,7 @@ struct NeuralFuns {
     using normalize = Tanh< Double >;
 };
 
-constexpr size_t input_size = 128; //pca.eigenvalues.rows;
+constexpr size_t input_size = 150; //pca.eigenvalues.rows;
 constexpr size_t batch_size = 7;
 using Cell = LstmCell< input_size, input_size, NeuralFuns<> >;
 using Net = Network< double, Cell, Cell >;

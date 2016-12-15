@@ -38,7 +38,7 @@ cv::PCA compute_pca( std::vector< cv::String >& filenames ) {
 
     Image dataset = reshape_images( imgs );
 
-    cv::PCA pca( dataset, Image(), 0, 0.95 );
+    cv::PCA pca( dataset, Image(), 0, 150 );
     return pca;
 }
 
