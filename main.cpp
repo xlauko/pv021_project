@@ -93,18 +93,18 @@ int main( int argc, const char* argv[] )
     std::string keys = {
         "{ data | | data path }"
         "{ pca     | | pca path }"
-        "{ learn   |1 | learn if 1 else evaluate }"
-        "{ o       |eval.jpg | evaluated output }"
-        "{ s       | | save network to given path }"
-        "{ l       | | load network from given path }"
-        "{ ite     |1| number of learning iterations }"
+        "{ learn   |1| learn if 1 else evaluate }"
+        "{ o      |<none>| evaluated output }"
+        "{ @l      |<none>| load network from given path }"
+        "{ @s      | | save network to given path }"
+        "{ ite    || number of learning iterations }"
     };
 
     cv::CommandLineParser cmd( argc, argv, keys.c_str() );
 
     if( argc < 3 )
     {
-        cmd.printMessage();
+        //cmd.printMessage();
         return 0;
     }
 
@@ -131,7 +131,6 @@ int main( int argc, const char* argv[] )
     }
 
     bool tolearn = cmd.get< int >( "learn" );
-
     if ( tolearn ) {
         int ite = cmd.get< int >( "ite" );
         learn< decltype(pca), Net >( pca, network, filenames, ite );
@@ -141,6 +140,8 @@ int main( int argc, const char* argv[] )
         img_pca = img_pca * scale;
         auto image = from_pca( img_pca, rows, pca );
         auto o = cmd.get< std::string >( "o" );
+        if ( o == "" )
+            std::cerr << "Empty output path." << std::endl;
         cv::imwrite( o, image );
     }
 
